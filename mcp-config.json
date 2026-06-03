@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "acme-financial-dwh": {
+      "command": "python",
+      "args": ["-m", "app.mcp.mcp_server"],
+      "cwd": "/path/to/acme-financial-dwh/backend",
+      "env": {
+        "MONGO_URI": "mongodb://acme:acme_secret@localhost:27017/acme_dwh?authSource=admin",
+        "MONGO_DB_NAME": "acme_dwh"
+      }
+    }
+  }
+}

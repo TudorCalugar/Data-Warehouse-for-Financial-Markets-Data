@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: acme_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: acme
+      MONGO_INITDB_ROOT_PASSWORD: acme_secret
+      MONGO_INITDB_DATABASE: acme_dwh
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - acme_net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acme_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URI: mongodb://acme:acme_secret@mongodb:27017/acme_dwh?authSource=admin
+      MONGO_DB_NAME: acme_dwh
+      NASDAQ_API_KEY: ${NASDAQ_API_KEY:-demo}
+      LOG_LEVEL: INFO
+    depends_on:
+      - mongodb
+    networks:
+      - acme_net
+    volumes:
+      - ./backend:/app
+
+  # Optional: seed demo data on first run
+  seeder:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acme_seeder
+    command: python -m app.db.seeder
+    environment:
+      MONGO_URI: mongodb://acme:acme_secret@mongodb:27017/acme_dwh?authSource=admin
+      MONGO_DB_NAME: acme_dwh
+      NASDAQ_API_KEY: ${NASDAQ_API_KEY:-demo}
+    depends_on:
+      - mongodb
+    networks:
+      - acme_net
+    restart: "no"
+
+volumes:
+  mongo_data:
+
+networks:
+  acme_net:
+    driver: bridge
