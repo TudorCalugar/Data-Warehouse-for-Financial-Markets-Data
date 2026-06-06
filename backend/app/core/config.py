@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # LLM (Anthropic)
     anthropic_api_key: str = ""
-    llm_model: str = "claude-sonnet-4-20250514"
+    llm_model: str = "claude-sonnet-4-6"
 
     class Config:
         env_file = ".env"

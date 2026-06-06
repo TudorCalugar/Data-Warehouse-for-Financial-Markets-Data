@@ -29,6 +29,7 @@ services:
       MONGO_URI: mongodb://acme:acme_secret@mongodb:27017/acme_dwh?authSource=admin
       MONGO_DB_NAME: acme_dwh
       NASDAQ_API_KEY: ${NASDAQ_API_KEY:-demo}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       LOG_LEVEL: INFO
     depends_on:
       - mongodb
