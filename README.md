@@ -1,7 +1,7 @@
 # Acme Ltd — Financial Data Warehouse
 
 > **Lab Project**: Data Warehouse for Financial Markets Data  
-> **Stack**: Python 3.12 · FastAPI · MongoDB 7 · Motor (async) · MCP · Claude AI  
+> **Stack**: Python 3.12 · FastAPI · MongoDB 7 · Motor (async) · MCP · Claude AI · Apache Spark (PySpark)  
 > **Paradigm**: NoSQL Temporal DWH (append-only, no updates/deletes in-place)
 
 ---
@@ -122,6 +122,46 @@ Additional endpoints:
 | `GET /api/v1/analytics/compare` | Multi-asset comparison + correlation |
 | `GET /api/v1/analytics/export` | Flat export for Spark/pandas |
 | `POST /api/v1/assistant/chat` | LLM assistant chat (UC4) |
+
+---
+
+## Apache Spark Workflows (UC3)
+
+Two standalone PySpark jobs are included in the `spark/` directory, implementing the mandatory analytics and ML requirements.
+
+### Running the Spark jobs
+
+Prerequisites: Java 17+, PySpark (`pip install pyspark pymongo numpy`), MongoDB running (`docker-compose up -d`).
+
+```bash
+# Aggregation workflow
+python spark/aggregations.py
+
+# ML pipeline
+python spark/ml_pipeline.py
+```
+
+### `spark/aggregations.py` — Aggregation Workflow
+
+Reads time-series data from MongoDB into a Spark DataFrame and computes:
+
+- **Per-asset summary statistics** — avg/min/max/std close price, total volume, record count
+- **Daily returns & volatility** — avg daily return %, volatility (std of daily returns), best/worst single day
+- **Rolling 30-day average close** — computed with a Spark window function over each asset × source partition
+- **Asset class breakdown** — number of assets and average close price grouped by class (stock, crypto, etc.)
+
+Results are persisted back to MongoDB in four collections: `spark_asset_summary`, `spark_volatility`, `spark_rolling_avg`, `spark_class_breakdown`.
+
+### `spark/ml_pipeline.py` — ML Prediction Workflow
+
+Trains a **Linear Regression model per asset × source** using Spark MLlib:
+
+- **Feature engineering** — lag features (t-1, t-2, t-3 close prices), rolling 5-day and 10-day averages, day index
+- **Train/test split** — 80% train / 20% test, split chronologically
+- **Model training** — `pyspark.ml.regression.LinearRegression` with L2 regularisation
+- **Evaluation** — RMSE and R² computed on the held-out test set
+- **Forecasting** — 5-day ahead price predictions generated for each asset
+- **Persistence** — predictions and model metrics saved to `spark_ml_predictions` and `spark_ml_metrics` in MongoDB
 
 ---
 

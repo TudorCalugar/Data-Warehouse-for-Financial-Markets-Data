@@ -17,11 +17,19 @@ All 5 required queries implemented:
 - Q4: `GET /api/v1/sources/{id}` — full provider details
 - Q5: `GET /api/v1/timeseries/` — paginated OHLCV with date range filter
 
-**UC3 — Analytics**  
+**UC3 — Analytics & Apache Spark**  
 - Summary statistics (min/max/avg/std close, total volume, % change) via MongoDB aggregation
 - 5-day price forecasting using linear regression on last 60 data points with 90% confidence intervals
 - Multi-asset comparison: Pearson correlation matrix across assets
-- Flat export endpoint (`/analytics/export`) for Apache Spark / pandas ingestion
+- Flat export endpoint (`/analytics/export`) for downstream consumption
+
+Two standalone Apache Spark (PySpark) jobs are included in `spark/`, implementing the mandatory analytics and ML workflows:
+
+**`spark/aggregations.py` — Spark Aggregation Workflow**
+Reads all time-series records from MongoDB into a Spark DataFrame and computes: per-asset summary statistics (avg/min/max/std close, total volume), daily returns and volatility using Spark window functions, rolling 30-day average close prices, and an asset class breakdown. All results are persisted back to MongoDB (`spark_asset_summary`, `spark_volatility`, `spark_rolling_avg`, `spark_class_breakdown`).
+
+**`spark/ml_pipeline.py` — Spark ML Pipeline**
+Trains a Linear Regression model per asset × data source using Spark MLlib. Features include lag-1/2/3 close prices, rolling 5-day and 10-day averages, and a day index. The pipeline performs an 80/20 chronological train/test split, evaluates each model with RMSE and R², generates 5-day ahead forecasts, and persists all predictions and metrics to MongoDB (`spark_ml_predictions`, `spark_ml_metrics`).
 
 **UC4 — LLM Assistant via MCP**  
 Dual integration:
