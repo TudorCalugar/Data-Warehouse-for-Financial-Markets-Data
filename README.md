@@ -6,12 +6,6 @@
 
 ---
 
-## Demo Video
-
-https://drive.google.com/file/d/15evXcUDzxhNGEs_C1zOKCHRVORCDCPS_/view?usp=sharing
-
----
-
 ## Architecture Overview
 
 ```
